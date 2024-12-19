@@ -44,6 +44,8 @@ void FH_mount(StoreDisk_t* disk)
 	fresult = f_mount(disk->fatfs, disk->name, 1);
 	if(fresult != FR_OK) {
 		FH_ERR("mount SD err[%d]\n", fresult);
+	} else {
+		FH_DBG("mount SD succ\n");
 	}
 	disk->mount_cnt++;
 }
@@ -338,12 +340,49 @@ FRESULT FH_read(StoreDisk_t* disk, char* file_name, char* buf, UINT btr, UINT* b
 		FH_ERR("read \"%s\" err[%d]\n", full_name, fresult);
 	} else {
 		buf[*br] = '\0';
-		FH_DBG("[%s]", buf);
+		//FH_DBG("[%s]", buf);
 		fresult = f_close(disk->file);
 		if(fresult != FR_OK) {
 			FH_ERR("close \"%s\" err[%d]\n", full_name, fresult);
 		}
 	}
+	return fresult;
+}
+
+FRESULT FH_read_line(StoreDisk_t* disk, char* file_name, char* buf, int len, uint8_t flag)
+{
+	char full_name[MAX_PATH_LEN] = {0};
+	
+	if(strlen(disk->name) + strlen(file_name) >= MAX_PATH_LEN) {
+		FH_ERR("path too long\n");
+		return FR_INVALID_PARAMETER;
+	}
+	sprintf(full_name, "%s%s", disk->name, file_name);
+	
+	if(flag & FILE_NEED_OPEN) {
+		/**** check whether the file exists or not ****/
+		fresult = f_stat(full_name, &fno);
+		if(fresult != FR_OK) {
+			FH_ERR("file \"%s\" NOT exists\n", full_name);
+			return fresult;
+		}
+
+		fresult = f_open(disk->file, full_name, FA_READ);
+		if(fresult != FR_OK) {
+			FH_ERR("open \"%s\" err[%d]\n", full_name, fresult);
+			return fresult;
+		}
+	}
+	
+	f_gets(buf, len, disk->file);
+	
+	if(flag & FILE_NEED_CLOSE) {
+		fresult = f_close(disk->file);
+		if(fresult != FR_OK) {
+			FH_ERR("close \"%s\" err[%d]\n", full_name, fresult);
+		}
+	}
+	
 	return fresult;
 }
 
@@ -584,6 +623,8 @@ void FH_API_test(StoreDisk_t* disk)
 	FH_write(disk, "dir1/file12.txt", "FH_write() FA_OPEN_APPEND test", FA_OPEN_APPEND);
 	FH_read(disk, "dir1/file12.txt", buf, FILE_SIZE, &br);
 	printf("read file[%d]: [%s]\n", br, buf);
+	
+	// FH_read_line(&sDisk[0], "dir1/file12.txt", buf, FILE_SIZE, FILE_NEED_OPEN | FILE_NEED_CLOSE);
 	
 	FH_write(disk, "dir1/file12.txt", "FH_write() FA_CREATE_ALWAYS test", FA_CREATE_ALWAYS);
 	FH_read(disk, "dir1/file12.txt", buf, FILE_SIZE, &br);

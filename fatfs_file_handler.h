@@ -25,6 +25,9 @@
 #define MAX_PATH_LEN	50		// full path length(include volume name, eg: "0:/DirName/FileName.xxx" length is 23)
 #define FH_API_TEST		0
 
+#define FILE_NEED_OPEN	(0x01)
+#define FILE_NEED_CLOSE	(0x02)
+
 // define yourself's LOG API
 #if SD_LOG_EN
 #include "dbger.h"
@@ -96,6 +99,7 @@ FRESULT FH_remove_file(StoreDisk_t* disk, char* file_name);
  */
 FRESULT FH_write(StoreDisk_t* disk, char* file_name, char *data, BYTE mode);
 FRESULT FH_read(StoreDisk_t* disk, char* file_name, char* buf, UINT btr, UINT* br);
+FRESULT FH_read_line(StoreDisk_t* disk, char* file_name, char* buf, int len, uint8_t flag);
 FRESULT FH_read_bin(StoreDisk_t* disk, char* file_name, uint32_t offset, uint32_t numBytesToRead, uint8_t* dest);
 
 FRESULT FH_get_file_info(StoreDisk_t* disk, char* file_name);
